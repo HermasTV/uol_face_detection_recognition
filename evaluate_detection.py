@@ -146,8 +146,8 @@ def evaluate(datapath, face_detector, bb_gt_collection):
 
 def eval_models():
     models = ["mediapipe","hog","retina","cascade"]
-    data_dict = extract_and_filter_data(["val"])
     WIDERFace(root="datasets",split="val",download=True)
+    data_dict = extract_and_filter_data(["val"])
     results = []
     for model in models:
         face_detector = Detector(model)
