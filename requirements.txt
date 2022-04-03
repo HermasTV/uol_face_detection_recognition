@@ -1,0 +1,6 @@
+cmake
+opencv-python
+face-recognition
+retina-face
+wget
+deepface
