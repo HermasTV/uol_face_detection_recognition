@@ -11,13 +11,14 @@ import os
 import torch
 from cv2 import cv2
 import utils
-from vgg18 import myResNet
+import numpy as np
+from Siamese_resnet18 import myResNet
 
 class Encoder ():
     def __init__(self, encoder_name):
         self.encoder_name = encoder_name
-        # self.model = 
-    def _load_vgg(self):
+        
+    def _load_vgg_encoder(self):
         weights_link = "https://download.pytorch.org/models/resnet18-5c106cde.pth"
         weights_path = "recognition/assets/resnet18.pth"
         if not os.path.exists(weights_path):
@@ -25,13 +26,13 @@ class Encoder ():
             utils.download_url(weights_link,weights_path)
         model = myResNet()
         model.load_state_dict(torch.load(weights_path))
+    
+    def euclidean_distance(a,b):
 
+        a/= np.sqrt(np.maximum(np.sum(np.square(a)),1e-10))
+        b/= np.sqrt(np.maximum(np.sum(np.square(b)),1e-10))
 
-class Distance ():
-    def __init__(self, model_name):
-        self.model_name = model_name
+        dist = np.sqrt(np.sum(np.square(a-b)))
 
-def circule_loss():
-    pass
-def arc_face():
-    pass
+        return dist
+

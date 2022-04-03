@@ -3,6 +3,11 @@ import torch.nn as nn
 import requests
 import os 
 import utils
+import cv2
+import numpy as np
+from PIL import Image
+import torchvision.transforms as transforms
+
 
 class Block(torch.nn.Module):
     def __init__(self,inplanes,planes,stride=1,downsample=None):
@@ -114,12 +119,56 @@ class ResNet18(torch.nn.Module):
 
         return x
 
+class SiameseNetwork(nn.Module):
+    def __init__(self,encoder):
+        super(SiameseNetwork, self).__init__()
+        self.encoder = encoder
+
+    def forward_once(self, x):
+        output = self.encoder(x)
+        
+        return output
+
+    def forward(self, input1, input2):
+        output1 = self.forward_once(input1).cpu().detach().numpy()
+        output2 = self.forward_once(input2).cpu().detach().numpy()
+        return output1, output2
+
+
 def myResNet(num_classes=10):
     return ResNet18(Block, num_classes)
 
-# Testing VGG model  
+def euclidean_distance(a,b):
+
+    dist = np.linalg.norm(a - b)
+
+    return dist
+
+def load(img_path):
+
+    input_image = Image.open(img_path)
+    transform = transforms.Compose([
+    transforms.Resize(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+
+    input_tensor = transform(input_image)
+    input_batch = input_tensor.unsqueeze(0)
+    return input_batch
+
+# Testing Resnet model  
 if __name__ == '__main__':
 
+    img1_path = "obama_face.jpg"
+    img2_path = "obama2_face.jpg"
+    img3_path = "clinton_face.jpg"
+
+    img1 = load(img1_path)
+    img2 = load(img2_path)
+    img3 = load(img3_path)
+
+    
     weights_link = "https://download.pytorch.org/models/resnet18-5c106cde.pth"
     weights_path = "recognition/assets/resnet18.pth"
     if not os.path.exists(weights_path):
@@ -128,3 +177,16 @@ if __name__ == '__main__':
     model = myResNet()
     model.load_state_dict(torch.load(weights_path))
     
+    siamese_model = SiameseNetwork(model)
+    res1,res2 = siamese_model(img1,img2)
+
+    distance1 = euclidean_distance(res1,res2)
+    print(distance1)
+
+    res1,res2 = siamese_model(img1,img3)
+    distance2 = euclidean_distance(res1,res2)
+    print(distance2)
+    
+    res1,res2 = siamese_model(img2,img3)
+    distance3 = euclidean_distance(res1,res2)
+    print(distance3)

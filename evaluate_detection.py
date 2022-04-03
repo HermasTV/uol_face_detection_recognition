@@ -55,44 +55,35 @@ def get_iou(boxA, boxB):
         float
                 in [0, 1]
         """
-
     bb1 = dict()
     bb1['x1'] = boxA[0]
     bb1['y1'] = boxA[1]
     bb1['x2'] = boxA[2]
     bb1['y2'] = boxA[3]
-
     bb2 = dict()
     bb2['x1'] = boxB[0]
     bb2['y1'] = boxB[1]
     bb2['x2'] = boxB[2]
     bb2['y2'] = boxB[3]
-
     # Determine the coordinates of the intersection rectangle
     x_left = max(bb1['x1'], bb2['x1'])
     y_top = max(bb1['y1'], bb2['y1'])
     x_right = min(bb1['x2'], bb2['x2'])
     y_bottom = min(bb1['y2'], bb2['y2'])
-
     if x_right < x_left or y_bottom < y_top:
         return 0.0
-
     # The intersection of two axis-aligned bounding boxes is always an
     # axis-aligned bounding box
     intersection_area = (x_right - x_left) * (y_bottom - y_top)
-
     # Compute the area of both bounding boxes area
     bb1_area = (bb1['x2'] - bb1['x1']) * (bb1['y2'] - bb1['y1'])
     bb2_area = (bb2['x2'] - bb2['x1']) * (bb2['y2'] - bb2['y1'])
-
     # Compute the intersection over union by taking the intersection
     # area and dividing it by the sum of prediction + ground-truth
     # areas - the intersection area
     iou = intersection_area / float(bb1_area + bb2_area - intersection_area)
-
     assert iou >= 0.0
     assert iou <= 1.0
-
     return iou
 
 
@@ -138,16 +129,12 @@ def evaluate(datapath, face_detector, bb_gt_collection):
                     if pred_dict[i] >= 0.5:
                         tp += 1
                 precision = float(tp) / float(total_gt_face)
-
             else:
                 precision = 0
-
             image_average_iou = total_iou / total_gt_face
             image_average_precision = precision
-
             data_total_iou += image_average_iou
             data_total_precision += image_average_precision
-
     result = dict()
     result['average_iou'] = float(data_total_iou) / float(total_data)
     result['mean_average_precision'] = float(data_total_precision) / float(
@@ -157,33 +144,21 @@ def evaluate(datapath, face_detector, bb_gt_collection):
 
     return result
 
-
+def eval_models():
+    models = ["mediapipe","hog","retina","cascade"]
+    data_dict = extract_and_filter_data(["val"])
+    WIDERFace(root="datasets",split="val",download=True)
+    results = []
+    for model in models:
+        face_detector = Detector(model)
+        dataloc = 'datasets\widerface'
+        result = evaluate(dataloc, face_detector, data_dict)
+        results.append(result)
+        print('Average IOU = %s' % (str(result['average_iou'])))
+        print('mAP = %s' % (str(result['mean_average_precision'])))
+        print('Average inference time = %s' % (
+            str(result['average_inferencing_time'])))
+    print(results)
 
 if __name__ == '__main__':
-
-    img = cv2.imread('Obama.jpg')
-    # img= np.array(img)
-
-    # wider_face = WIDERFace(root="datasets",split="val",download=True)
-    data_dict = extract_and_filter_data(["val"])
-
-    face_detector = Detector("mediapipe")
-    # res1 = face_detector.detect(img)[0]
-    # print(res1)
-
-    # face_detector = Detector("hog")
-    # res1 = face_detector.detect(img)[0]
-
-    # cv2.imshow("res1",img[res1[1]:res1[3] ,res1[0]:res1[2] ])
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-    # print(res)
-
-
-    dataloc = 'datasets\widerface'
-    result = evaluate(dataloc, face_detector, data_dict)
-
-    print('Average IOU = %s' % (str(result['average_iou'])))
-    print('mAP = %s' % (str(result['mean_average_precision'])))
-    print('Average inference time = %s' % (
-        str(result['average_inferencing_time'])))
+    eval_models()
